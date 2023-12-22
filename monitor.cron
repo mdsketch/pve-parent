@@ -1,0 +1,3 @@
+# Pve-parent crontab
+# Reset the monitoring once a week on Sunday at 00:00
+0 0 * * 0 /opt/pve-parent/monitor.sh -r

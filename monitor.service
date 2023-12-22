@@ -1,0 +1,12 @@
+[Unit]
+Description=Monitor's Proxmox VE vm runtime
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+WorkingDirectory=/opt
+ExecStart=/opt/pve-parent/monitor.sh -d
+User=root
+
+[Install]
+WantedBy=multi-user.target

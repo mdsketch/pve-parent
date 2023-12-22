@@ -2,9 +2,8 @@
 # This script is used to monitor the status of a VM
 # If the vm has been on for longer than the specified time, it will be shut down
 
-DATA_DIR=/opt/monitor
+DATA_DIR=/opt/pve-parent/
 RUNTIME_FILE=${DATA_DIR}/runtime
-UPTIME_FILE=${DATA_DIR}/uptime
 MAX_TIME=36000 # 10 hours
 VM_ID=100
 DAEMON=0
@@ -13,7 +12,6 @@ SLEEP_TIME=10
 reset_runtime() {
     echo "Resetting runtime for VM ${VM_ID}"
     echo 0 >${RUNTIME_FILE}
-    echo 0 >${UPTIME_FILE}
     exit 0
 }
 
@@ -21,10 +19,6 @@ reset_runtime() {
 check_vm() {
     local runtime=0
     local uptime=0
-    local recorded_uptime=0
-
-    # Get the currently recorded uptime
-    recorded_uptime=$(cat ${UPTIME_FILE})
 
     # Get the vm uptime in seconds
     uptime=$(qm status ${VM_ID} -verbose | grep uptime | tail -1 | cut -f2 -d" ")
@@ -32,12 +26,9 @@ check_vm() {
 
     # only update anything if the uptime is greater than 0
     if [ ${uptime} -gt 0 ]; then
-        # Record the current uptime
-        echo ${uptime} >${UPTIME_FILE}
-
         # Figure out how long the vm has been running
         runtime=$(cat ${RUNTIME_FILE})
-        runtime=$((runtime + uptime - recorded_uptime))
+        runtime=$((runtime + SLEEP_TIME))
         echo "VM ${VM_ID} has been running for a total ${runtime} seconds since last reset"
 
         # If the vm has been on for longer than the specified time, it will be shut down
@@ -82,10 +73,9 @@ while true; do
 done
 
 # If the runtime file does not exist, create it
-if [ ! -f ${RUNTIME_FILE} ] || [ ! -f ${UPTIME_FILE} ]; then
+if [ ! -f ${RUNTIME_FILE} ]; then
     mkdir -p ${DATA_DIR}
     echo 0 >${RUNTIME_FILE}
-    echo 0 >${UPTIME_FILE}
 fi
 
 if [ ${DAEMON} -eq 1 ]; then
