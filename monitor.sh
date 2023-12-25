@@ -15,6 +15,10 @@ reset_runtime() {
     exit 0
 }
 
+send_email() {
+    mail -s "$1" ${EMAIL}
+}
+
 # Check if the vm should be shut down
 check_vm() {
     local runtime=0
@@ -31,9 +35,14 @@ check_vm() {
         runtime=$((runtime + SLEEP_TIME))
         echo "VM ${VM_ID} has been running for a total ${runtime} seconds since last reset"
 
+        # Send an email every hour of runtime
+        if [ $((runtime % 3600)) -eq 0 ]; then
+            send_email "VM ${VM_ID} has been running for ${runtime} seconds"
+        fi
         # If the vm has been on for longer than the specified time, it will be shut down
         if [ ${runtime} -gt ${MAX_TIME} ]; then
             echo "Shutting down VM ${VM_ID}"
+            send_email "VM ${VM_ID} is being shut down"
             qm shutdown ${VM_ID}
         else
             echo ${runtime} >${RUNTIME_FILE}
@@ -41,8 +50,8 @@ check_vm() {
     fi
 }
 
-OPTIONS=m:t:dr
-LONGOPTS=vmid:,max_time:,daemon,reset
+OPTIONS=m:t:dre:
+LONGOPTS=vmid:,max_time:,daemon,reset,email:
 
 PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS -- "$@") || exit
 eval set -- "$PARSED"
@@ -64,6 +73,10 @@ while true; do
     -r | --reset)
         reset_runtime
         shift
+        ;;
+    -e | --email)
+        EMAIL="$2"
+        shift 2
         ;;
     --)
         shift
