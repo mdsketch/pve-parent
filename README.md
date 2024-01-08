@@ -1,5 +1,5 @@
 # pve-parent
-Parental Controls for Proxmox
+Just a random set of scripts I created to enable Parental Controls for Proxmox
 
 
 ## Installation
