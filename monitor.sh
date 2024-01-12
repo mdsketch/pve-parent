@@ -4,14 +4,14 @@
 
 DATA_DIR=/opt/pve-parent/
 RUNTIME_FILE=${DATA_DIR}/runtime
-MAX_TIME=36000 # 10 hours
+MAX_TIME=72000 # 20 hours
 VM_ID=100
 DAEMON=0
-SLEEP_TIME=10
+SLEEP_TIME=60
 
 reset_runtime() {
     echo "Resetting runtime for VM ${VM_ID}"
-    echo 0 >${RUNTIME_FILE}
+    echo "0" >${RUNTIME_FILE}
     exit 0
 }
 
@@ -36,8 +36,10 @@ check_vm() {
         echo "VM ${VM_ID} has been running for a total ${runtime} seconds since last reset"
 
         # Send an email every hour of runtime
-        if [ $((runtime % 3600)) -eq 0 ]; then
-            send_email "VM ${VM_ID} has been running for ${runtime} seconds"
+        if [ $((runtime % 7200)) -eq 0 ]; then
+            # convert seconds to hours
+            local hours=$(echo "scale=2; $runtime / 3600" | bc)
+            send_email "VM ${VM_ID} has been running for ${runtime} Hours"
         fi
         # If the vm has been on for longer than the specified time, it will be shut down
         if [ ${runtime} -gt ${MAX_TIME} ]; then
@@ -88,7 +90,7 @@ done
 # If the runtime file does not exist, create it
 if [ ! -f ${RUNTIME_FILE} ]; then
     mkdir -p ${DATA_DIR}
-    echo 0 >${RUNTIME_FILE}
+    echo "0" >${RUNTIME_FILE}
 fi
 
 if [ ${DAEMON} -eq 1 ]; then
